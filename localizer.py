@@ -26,9 +26,29 @@ def logarithmic_scale(x, k=9):
     return np.log(1 + k * x) / np.log(1 + k)
 
 
+def rms(S: np.ndarray) -> np.ndarray:
+    """
+    Calculates the root-mean-square (RMS) amplitude of a stereo signal.
+    
+    Parameters
+    ----------
+    S : np.ndarray
+        The magnitude spectrum of a stereo signal.
+    
+    Returns
+    -------
+    out : np.ndarray
+        Each entry in the array is the amplitude of a frame in the 
+        signal, where 0 is silence, and 1 is the loudest possible 
+        signal.
+    """
+    rms = np.sqrt(np.mean(S ** 2, axis=1))
+    return np.sqrt(rms[0] ** 2 + rms[1] ** 2) / np.sqrt(2)
+
+
 def ild(S: np.ndarray) -> np.ndarray:
     """
-    Calculates the Interaural Level Difference (ILD) of a stereo signal.
+    Calculates the interaural level difference (ILD) of a stereo signal.
     
     Parameters
     ----------
@@ -42,10 +62,8 @@ def ild(S: np.ndarray) -> np.ndarray:
         where 0 is audio only in the left channel, 1 is audio only in
         the right channel, and 0.5 is equal level in both channels.
     """
-    print("Calculating the RMS channel amplitudes...")
     rms = np.sqrt(np.mean(S ** 2, axis=1))
 
-    print("Calculating the ILDs...")
     # "Add" the two channel amplitudes
     total_amp = np.sqrt(rms[0] ** 2 + rms[1] ** 2)
 
@@ -58,6 +76,48 @@ def ild(S: np.ndarray) -> np.ndarray:
     ilds = np.arccos(rms[0] / total_amp) / np.pi * 2
 
     return ilds
+
+
+def itd(D: np.ndarray) -> np.ndarray:
+    """
+    Estimates the inter-channel time difference (ITD) of a stereo signal.
+
+    Uses the Generalized Cross-Correlation with Phase Transform 
+    (GCC-PHAT) algorithm.
+
+    Parameters
+    ----------
+    D : np.ndarray
+        The STFT of the stereo signal to be analyzed.
+    
+    Returns
+    -------
+    out : np.ndarray
+        Each entry in the array is the estimated ITD of a frame in 
+        the signal in milliseconds. Possible range is (-10, 10)
+    """
+    max_lag_ms = 10
+    max_lag_samples = (int)(max_lag_ms / 1000 * SR)
+
+    R = D[0] * np.conj(D[1])
+    R_mag = np.abs(R)
+    R_mag[R_mag == 0] = EPSILON
+    R /= R_mag
+
+    r = np.fft.ifft(R, axis=0)
+    r = np.real(r)
+
+    r = np.fft.fftshift(r, axes=0)
+
+    num_samples, num_frames = r.shape
+    midpoint = num_samples // 2
+    r = r[midpoint - max_lag_samples : midpoint + max_lag_samples, :]
+
+    lag_samples = np.argmax(r, axis=0) - max_lag_samples
+    lag_ms = lag_samples * 1000 / SR * 2
+
+    return lag_ms
+
 
 
 def msw(y: np.ndarray) -> np.ndarray:
@@ -95,16 +155,14 @@ def centroid(S: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     S : np.ndarray
-        The magnitude spectrum of the signal.
+        The windowed magnitude spectrum of the signal, from an STFT.
 
     Returns
     -------
     out : np.ndarray
         The spectral centroid of each frame in the signal.
     """
-    centroids = librosa.feature.spectral_centroid(
-        S=S, 
-        sr=SR)
+    centroids = librosa.feature.spectral_centroid(S=S, sr=SR)
     centroids = centroids.sum(axis=0) / 2 / (SR / 2)
     centroids = logarithmic_scale(centroids)
     return centroids
@@ -117,16 +175,14 @@ def bandwidth(S: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     S : np.ndarray
-        The magnitude spectrum of the signal.
+        The windowed magnitude spectrum of the signal, from an STFT.
 
     Returns
     -------
     out : np.ndarray
         The spectral bandwidth of each frame in the signal.
     """
-    bandwidths = librosa.feature.spectral_bandwidth(
-        S=S, 
-        sr=SR)
+    bandwidths = librosa.feature.spectral_bandwidth(S=S, sr=SR)
     bandwidths = bandwidths.sum(axis=0) / 2 / (SR / 2)
     bandwidths = logarithmic_scale(bandwidths)
     return bandwidths
@@ -135,8 +191,9 @@ def bandwidth(S: np.ndarray) -> np.ndarray:
 def main():
     # file_path = "Audio/beep.125.wav"
     # file_path = "Audio/beep.5.wav"
-    file_path = "Audio/beep.875.wav"
+    # file_path = "Audio/beep.875.wav"
     # file_path = "Audio/beep.wide.wav"
+    file_path = "Audio/beep2ms.wav" 
 
     frame_length = 8192
     hop_length = 4096  
@@ -152,6 +209,7 @@ def main():
         n_fft=frame_length, 
         hop_length=hop_length, 
         center=False)
+
     S = np.abs(D)
 
     y = librosa.util.frame(
@@ -164,6 +222,11 @@ def main():
     ilds = ild(S)
     print("ILDs:")
     print(ilds)
+
+    # print("Calculating the ITDs...")
+    itds = itd(D)
+    print("ITDS:")
+    print(itds)
     
     # print("Calculating the MSW...")
     msws = msw(y)
