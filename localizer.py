@@ -1,5 +1,6 @@
 import argparse
 from dataclasses import dataclass, asdict
+import json
 import librosa
 import numpy as np
 
@@ -7,7 +8,7 @@ import feature_extraction as fe
 
 
 @dataclass
-class SourceData:
+class DataFrame:
     x_position: float
     y_position: float
     x_width: float
@@ -41,14 +42,22 @@ def main():
         hop_length=args.hop_length)
     y = y * np.hanning(args.frame_length)[None, :, None]
 
-    amps = fe.rms(y)
-    ilds = fe.ild(S)
+    volumes = fe.rms_volume(y)
+    ilds = fe.ild(y)
     itds = fe.itd(D, args.sr)
     msws = fe.msw(y)
     centroids = fe.centroid(S, args.sr)
     bandwidths = fe.bandwidth(S, args.sr)
 
-    print(amps)
+    data_frames = [
+        DataFrame(xp, yp, xw, yw, s)
+        for xp, yp, xw, yw, s 
+        in zip(ilds, centroids, msws, bandwidths, volumes)
+    ]
+    
+    data_dicts = [asdict(frame) for frame in data_frames]
+    with open("output.json", "w") as f:
+        json.dump(data_dicts, f, indent=2)
 
 
 if __name__ == "__main__":

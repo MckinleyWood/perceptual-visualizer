@@ -24,10 +24,13 @@ def logarithmic_scale(x, k=9):
     return np.log(1 + k * x) / np.log(1 + k)
 
 
-def rms(y: np.ndarray) -> np.ndarray:
+def rms_volume(y: np.ndarray) -> np.ndarray:
     """
-    DOES NOT WORK!!!!
-    Calculates the root-mean-square (RMS) amplitude of a stereo signal.
+    Estimates the perceived volume of a stereo signal.
+
+    This function works by calculating the root mean square (RMS) of the
+    signal, and then scaling the RMS value to range of [0, 1] with a 
+    logarithmic (decibel) scaling.
     
     Parameters
     ----------
@@ -42,11 +45,17 @@ def rms(y: np.ndarray) -> np.ndarray:
         signal, where 0 is silence, and 1 is the loudest possible 
         signal.
     """
-    rms = np.sqrt(np.mean(y ** 2, axis=1))
-    return rms[0] + rms[1] / 2
+    min_db = -60
+    rms = np.sqrt(np.mean(y ** 2, axis=(0, 1)))
+    rms = np.maximum(rms, EPSILON)
+
+    rms_db = 20 * np.log10(rms)
+    volume = (rms_db - min_db) / (0 - min_db)
+    volume = np.clip(volume, 0, 1)
+    return volume
 
 
-def ild(S: np.ndarray) -> np.ndarray:
+def ild(y: np.ndarray) -> np.ndarray:
     """
     THE RMS THING IS SUS!!!!
     Calculates the interaural level difference (ILD) of a stereo signal.
@@ -64,19 +73,18 @@ def ild(S: np.ndarray) -> np.ndarray:
         where 0 is audio only in the left channel, 1 is audio only in
         the right channel, and 0.5 is equal level in both channels.
     """
-    rms = np.sqrt(np.mean(S ** 2, axis=1, keepdims=True))
-    print(rms)
+    rms = np.sqrt(np.mean(y ** 2, axis=1))
 
-    # "Add" the two channel amplitudes
-    total_amp = np.sqrt(rms[0] ** 2 + rms[1] ** 2)
+    # Combine the two channel amplitudes
+    combined_rms = np.sqrt(rms[0] ** 2 + rms[1] ** 2)
 
     # Initailize our output array with a default value of 0.5
-    ilds = np.full_like(total_amp, 0.5)
+    ilds = np.full_like(combined_rms, 0.5)
 
     # Calculate the ILD for frames where the total amplitude is greater than 0
-    valid = total_amp > 0
-    ilds[valid] = np.arccos(rms[0, valid] / total_amp[valid]) / np.pi * 2
-    ilds = np.arccos(rms[0] / total_amp) / np.pi * 2
+    valid = combined_rms > 0
+    ilds[valid] = np.arccos(rms[0, valid] / combined_rms[valid]) / np.pi * 2
+    ilds = np.arccos(rms[0] / combined_rms) / np.pi * 2
 
     return ilds
 
@@ -156,12 +164,13 @@ def msw(y: np.ndarray) -> np.ndarray:
 
 def centroid(S: np.ndarray, sr: int) -> np.ndarray:
     """
-    Calculates the spectral centroid of a signal.
+    Calculates the spectral centroid of a signal. 
     
     Parameters
     ----------
     S : np.ndarray
-        The windowed magnitude spectrum of the signal, from an STFT.
+        The windowed magnitude spectrum of the signal, from an STFT. 
+        This should have shape (2, num_bins, num_frames).
     sr: int
         The sample rate.
 
@@ -173,7 +182,7 @@ def centroid(S: np.ndarray, sr: int) -> np.ndarray:
     centroids = librosa.feature.spectral_centroid(S=S, sr=sr)
     centroids = centroids.sum(axis=0) / 2 / (sr / 2)
     centroids = logarithmic_scale(centroids)
-    return centroids
+    return np.squeeze(centroids)
 
 
 def bandwidth(S: np.ndarray, sr: int) -> np.ndarray:
@@ -184,6 +193,7 @@ def bandwidth(S: np.ndarray, sr: int) -> np.ndarray:
     ----------
     S : np.ndarray
         The windowed magnitude spectrum of the signal, from an STFT.
+        This should have shape (2, num_bins, num_frames).
     sr: int
         The sample rate.
 
@@ -195,4 +205,4 @@ def bandwidth(S: np.ndarray, sr: int) -> np.ndarray:
     bandwidths = librosa.feature.spectral_bandwidth(S=S, sr=sr)
     bandwidths = bandwidths.sum(axis=0) / 2 / (sr / 2)
     bandwidths = logarithmic_scale(bandwidths)
-    return bandwidths
+    return np.squeeze(bandwidths)
