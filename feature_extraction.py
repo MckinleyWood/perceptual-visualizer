@@ -57,7 +57,6 @@ def rms_volume(y: np.ndarray) -> np.ndarray:
 
 def ild(y: np.ndarray) -> np.ndarray:
     """
-    THE RMS THING IS SUS!!!!
     Calculates the interaural level difference (ILD) of a stereo signal.
     
     Parameters
@@ -70,15 +69,15 @@ def ild(y: np.ndarray) -> np.ndarray:
     -------
     out : np.ndarray
         Each entry in the array is the ILD of a frame in the signal, 
-        where 0 is audio only in the left channel, 1 is audio only in
-        the right channel, and 0.5 is equal level in both channels.
+        where -1 is audio only in the left channel, 1 is audio only in
+        the right channel, and 0 is equal level in both channels.
     """
     rms = np.sqrt(np.mean(y ** 2, axis=1))
 
     # Combine the two channel amplitudes
     combined_rms = np.sqrt(rms[0] ** 2 + rms[1] ** 2)
 
-    # Initailize our output array with a default value of 0.5
+    # Initailize our output array with a default value of 0
     ilds = np.full_like(combined_rms, 0.5)
 
     # Calculate the ILD for frames where the total amplitude is greater than 0
@@ -94,21 +93,23 @@ def itd(D: np.ndarray, sr: int) -> np.ndarray:
     Estimates the inter-channel time difference (ITD) of a stereo signal.
 
     Uses the Generalized Cross-Correlation with Phase Transform 
-    (GCC-PHAT) algorithm.
+    (GCC-PHAT) algorithm. Positive values indicate the right channel 
+    signal arrives earlier, and negative values indicate the left 
+    channel signal arrives earlier. The output range is (-10, 10).
 
     Parameters
     ----------
     D : np.ndarray
         The STFT of the stereo signal to be analyzed. This should have 
-        shape (2, num_samples, num_frames).
-    sr: int
+        shape (2, num_samples, num_frames). 
+    sr : int
         The sample rate.
     
     Returns
     -------
     out : np.ndarray
         Each entry in the array is the estimated ITD of a frame in 
-        the signal in milliseconds. Possible range is (-10, 10)
+        the signal in milliseconds.
     """
     max_lag_ms = 10
     max_lag_samples = (int)(max_lag_ms / 1000 * sr)
@@ -132,6 +133,55 @@ def itd(D: np.ndarray, sr: int) -> np.ndarray:
 
     return lag_ms
 
+
+def x_pos(y: np.ndarray, D: np.ndarray, sr: int) -> np.ndarray:
+    """
+    Estimates the x position of a sound source from a stereo signal.
+
+    This function uses the ILD and ITD of the signal, weighted based on
+    an experimentally determined model. It may produce extraneous values
+    when ILD and ITD cues are contradictory.
+
+    Parameters
+    ----------
+    y : np.ndarray
+        The samples of a stereo signal.
+    D : np.ndarray
+        The STFT of the stereo signal.
+    sr : int
+        The sample rate.
+
+    Returns
+    -------
+    out : np.ndarray
+        Each entry in the array is the estimated x position of a frame 
+        in the signal, where 0 is the farthest left, and 1 is the 
+        furthest right.
+    """
+    ilds = ild(y) * 2 - 1
+    itds = np.clip(itd(D, sr), -6., 6.)
+
+    ild_sign = np.sign(ilds)
+    itd_sign = np.sign(itds)
+
+    ilds = np.abs(ilds)
+    itds = np.abs(itds)
+
+    ild_relavent = ilds > 0.2
+    itd_relavent = itds > 1
+
+    # Choose ild_sign if ild_relavent is True, otherwise choose itd_sign
+    sign = np.where(ild_relavent, ild_sign, itd_sign)
+
+    k1 = 5.
+    k2 = 0.12
+    k3 = 10.
+
+    g = (k1 ** ilds - 1) / (k1 - 1)
+    h = k2 * itds * np.log10(k3 * (1 - ilds) + 1) / np.log10(k3 + 1)
+    x_pos = sign * np.clip(g + h, 0, 1)
+
+    return x_pos / 2 + 0.5
 
 
 def msw(y: np.ndarray) -> np.ndarray:
