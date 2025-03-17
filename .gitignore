@@ -1,6 +1,6 @@
 pvis/
 .DS_store
-
+output.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
