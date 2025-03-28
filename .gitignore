@@ -1,6 +1,7 @@
 pvis/
+Audio/
 .DS_store
-output.json
+output/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
