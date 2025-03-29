@@ -1,6 +1,7 @@
-pvis/
-Audio/
 .DS_store
+pvis/
+audio/
+separated/
 output/
 
 # Byte-compiled / optimized / DLL files
