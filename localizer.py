@@ -1,8 +1,8 @@
 import argparse
 from dataclasses import dataclass, asdict
 import csv
-import glob
 import os
+import shutil
 
 import demucs.separate
 import librosa
@@ -32,12 +32,11 @@ class DataFrame:
 
 
 def extract_features(
+        output_filename: str,
         y: np.ndarray,
-        duration: int, 
         frame_length: int, 
         hop_length: int, 
-        sr: int,
-        output_filename: str) -> None:
+        sr: int) -> None:
     """
     """
     # y will be the input signal to analyze.
@@ -69,7 +68,6 @@ def extract_features(
     ]
     
     data_dicts = [asdict(frame) for frame in data_frames]
-    output_filename = "output/" + output_filename + '.csv'
     fieldnames = data_dicts[0].keys()
 
     with open(output_filename, mode='w', newline='') as csvfile:
@@ -81,10 +79,9 @@ def extract_features(
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("input_path", type=str)
-    parser.add_argument("--duration", type=float, default=10)
-    parser.add_argument("--frame_length", type=int, default=8192)
-    parser.add_argument("--hop_length", type=int, default=4096)
-    parser.add_argument("--sr", type=int, default=22050)
+    parser.add_argument("--fps", type=int, default=30)
+    parser.add_argument("--frame_length", type=int, default=4096)
+    parser.add_argument("--hop_length", type=int, default=2048)
     args = parser.parse_args()
 
     # Separate vocals, drums, bass, and other stems using Demucs.
@@ -97,16 +94,44 @@ def main():
     print(f"\nRunning demucs on {args.input_path}...\n")
     demucs.separate.main([args.input_path])
 
-    # Load the separated audio files for further separation with nussl.
+    # Create the output directories if they don't exist.
     base = os.path.splitext(os.path.basename(args.input_path))[0]
+    if not os.path.exists("output"):
+        os.makedirs("output")
+    if not os.path.exists(f"output/{base}"):
+        os.makedirs(f"output/{base}")
+    if not os.path.exists(f"output/{base}/demucs"):
+        os.makedirs(f"output/{base}/demucs")
+    if not os.path.exists(f"output/{base}/nussl"):
+        os.makedirs(f"output/{base}/nussl")
+    if not os.path.exists(f"output/{base}/features"):
+        os.makedirs(f"output/{base}/features")
+
+    # Put the demucs audio in its proper place.
+    shutil.move(
+        os.path.join("separated", "htdemucs", base, "vocals.wav"),
+        os.path.join("output", base, "demucs", "vocals.wav"))
+    shutil.move(
+        os.path.join("separated", "htdemucs", base, "drums.wav"),
+        os.path.join("output", base, "demucs", "drums.wav"))
+    shutil.move(
+        os.path.join("separated", "htdemucs", base, "bass.wav"),
+        os.path.join("output", base, "demucs", "bass.wav"))
+    shutil.move(
+        os.path.join("separated", "htdemucs", base, "other.wav"),
+        os.path.join("output", base, "demucs", "other.wav"))
+    
+    shutil.rmtree("separated")
+
+    # Load the separated audio files for further separation with nussl.
     vocals = nussl.AudioSignal(
-        os.path.join("separated", "htdemucs", base, "vocals.wav"))
+        os.path.join("output", base, "demucs", "vocals.wav"))
     drums = nussl.AudioSignal(
-        os.path.join("separated", "htdemucs", base, "drums.wav"))
+        os.path.join("output", base, "demucs", "drums.wav"))
     bass = nussl.AudioSignal(
-        os.path.join("separated", "htdemucs", base, "bass.wav"))
+        os.path.join("output", base, "demucs", "bass.wav"))
     other = nussl.AudioSignal(
-        os.path.join("separated", "htdemucs", base, "other.wav"))
+        os.path.join("output", base, "demucs", "other.wav"))
         
     # Separate further using nussl...
     print("\nRunning second-level separation...\n")
@@ -114,30 +139,40 @@ def main():
         other, 2, 50)
     other_split = timbre_separator()
 
-    # Create a list of the separated audio signals.
+    # Create a list of the separated audio signals and resample them.
     sources = [
-        vocals.audio_data, 
-        drums.audio_data, 
-        bass.audio_data, 
-        other_split[0].audio_data,
-        other_split[1].audio_data
+        vocals, 
+        drums, 
+        bass, 
+        other_split[0],
+        other_split[1]
     ]
-
-    # Resample to the rate we want for feature extraction and file writing
-    sources = [librosa.resample(y, orig_sr=44100, target_sr=args.sr) 
+    
+    feature_sr = args.fps * args.hop_length 
+    sources = [s.audio_data for s in sources]
+    sources = [librosa.resample(y, orig_sr=44100, target_sr=feature_sr) 
                for y in sources]
 
-    # Create the output directory if it doesn't exist.
+    # Create the output directories if they don't exist.
     if not os.path.exists("output"):
         os.makedirs("output")
+    if not os.path.exists(os.path.join("output", base)):
+        os.makedirs(os.path.join("output", base))
+    if not os.path.exists(os.path.join("output", base, "demucs")):
+        os.makedirs(os.path.join("output", base, "demucs"))
+    if not os.path.exists(os.path.join("output", base, "nussl")):
+        os.makedirs(os.path.join("output", base, "nussl"))
+    if not os.path.exists(os.path.join("output", base, "features")):
+        os.makedirs(os.path.join("output", base, "features"))
     
     # Process each file and write the output files.
     print("\nExtracting features and writing files...")
     for i, y in enumerate(sources):
-        # sf.write("output/" + (str)(i) + ".wav", y.T, samplerate=args.sr)
-        extract_features(y, args.duration, args.frame_length, args.hop_length, 
-                         args.sr, (str)(i))
-        
+        sf.write(os.path.join("output", base, "nussl", f"{i}.wav"), 
+                 y.T, samplerate=feature_sr)
+        extract_features(os.path.join("output", base, "features", f"{i}.csv"),
+                         y, args.frame_length, args.hop_length, feature_sr)
+    
     print("\nDone!\n")
  
 
