@@ -21,6 +21,10 @@ import nussl
 
 import feature_extraction as fe
 
+# Have to figure out a way to nicely integrate LarsNet...
+
+# LarsNet also requires external download of pretrained models found here:
+# https://drive.usercontent.google.com/download?id=1U8-5924B1ii1cjv9p0MTPzayb00P4qoL&export=download&authuser=0
 
 @dataclass
 class DataFrame:
@@ -102,6 +106,18 @@ def main():
         os.makedirs(f"output/{base}")
     if not os.path.exists(f"output/{base}/demucs"):
         os.makedirs(f"output/{base}/demucs")
+
+    # Subdirectory for drums needed for larsnet to do drum demixing
+    if not os.path.exists(f"output/{base}/demucs/vocals"):
+        os.makedirs(f"output/{base}/demucs/vocals")
+    if not os.path.exists(f"output/{base}/demucs/drums"):
+        os.makedirs(f"output/{base}/demucs/drums")
+    if not os.path.exists(f"output/{base}/demucs/bass"):
+        os.makedirs(f"output/{base}/demucs/bass")
+    if not os.path.exists(f"output/{base}/demucs/other"):
+        os.makedirs(f"output/{base}/demucs/other")
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
     if not os.path.exists(f"output/{base}/nussl"):
         os.makedirs(f"output/{base}/nussl")
     if not os.path.exists(f"output/{base}/features"):
@@ -110,29 +126,34 @@ def main():
     # Put the demucs audio in its proper place.
     shutil.move(
         os.path.join("separated", "htdemucs", base, "vocals.wav"),
-        os.path.join("output", base, "demucs", "vocals.wav"))
+        os.path.join("output", base, "demucs", "vocals","vocals.wav"))
     shutil.move(
         os.path.join("separated", "htdemucs", base, "drums.wav"),
-        os.path.join("output", base, "demucs", "drums.wav"))
+        os.path.join("output", base, "demucs", "drums", "drums.wav"))
     shutil.move(
         os.path.join("separated", "htdemucs", base, "bass.wav"),
-        os.path.join("output", base, "demucs", "bass.wav"))
+        os.path.join("output", base, "demucs",  "bass", "bass.wav"))
     shutil.move(
         os.path.join("separated", "htdemucs", base, "other.wav"),
-        os.path.join("output", base, "demucs", "other.wav"))
+        os.path.join("output", base, "demucs", "other", "other.wav"))
     
     shutil.rmtree("separated")
 
     # Load the separated audio files for further separation with nussl.
     vocals = nussl.AudioSignal(
-        os.path.join("output", base, "demucs", "vocals.wav"))
+        os.path.join("output", base, "demucs", "vocals", "vocals.wav"))
     drums = nussl.AudioSignal(
-        os.path.join("output", base, "demucs", "drums.wav"))
+        os.path.join("output", base, "demucs", "drums", "drums.wav"))
     bass = nussl.AudioSignal(
-        os.path.join("output", base, "demucs", "bass.wav"))
+        os.path.join("output", base, "demucs", "bass", "bass.wav"))
     other = nussl.AudioSignal(
-        os.path.join("output", base, "demucs", "other.wav"))
+        os.path.join("output", base, "demucs", "other", "other.wav"))
         
+    # Drum demixing using larsnet
+    print("\nRunning LarsNet drums demixing...\n")
+
+    
+    
     # Separate further using nussl...
     print("\nRunning second-level separation...\n")
     timbre_separator = nussl.separation.primitive.TimbreClustering(
@@ -152,18 +173,6 @@ def main():
     sources = [s.audio_data for s in sources]
     sources = [librosa.resample(y, orig_sr=44100, target_sr=feature_sr) 
                for y in sources]
-
-    # Create the output directories if they don't exist.
-    if not os.path.exists("output"):
-        os.makedirs("output")
-    if not os.path.exists(os.path.join("output", base)):
-        os.makedirs(os.path.join("output", base))
-    if not os.path.exists(os.path.join("output", base, "demucs")):
-        os.makedirs(os.path.join("output", base, "demucs"))
-    if not os.path.exists(os.path.join("output", base, "nussl")):
-        os.makedirs(os.path.join("output", base, "nussl"))
-    if not os.path.exists(os.path.join("output", base, "features")):
-        os.makedirs(os.path.join("output", base, "features"))
     
     # Process each file and write the output files.
     print("\nExtracting features and writing files...")

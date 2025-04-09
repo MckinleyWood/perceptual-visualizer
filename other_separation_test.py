@@ -40,6 +40,9 @@ def other_clustering(input_file_path, output_folder_path, num_sources, window_si
             separator = nussl.separation.spatial.SpatialClustering(signal,num_sources)
         elif clustering == "timbre":
             separator = nussl.separation.primitive.TimbreClustering(signal, num_sources, 50)
+
+        #POTENTIALLY ADD PROJET CLUSTERING
+
         else:
             raise ValueError(f"Invalid clustering method: {clustering}")
 
@@ -73,7 +76,7 @@ def other_clustering(input_file_path, output_folder_path, num_sources, window_si
         #assemble list of processed windows
         clustered_windows[j] = other_split_sorted
 
-        print(f"Window {j+1} split successfully")
+        print(f"Window {j+1}/{len(windows)} split successfully")
 
 
     #clustered_windows is now the whole collection of data
