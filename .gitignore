@@ -3,6 +3,7 @@ pvis/
 audio/
 separated/
 output/
+larsnet/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
