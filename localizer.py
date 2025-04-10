@@ -80,29 +80,23 @@ def extract_features(
         writer.writeheader()
         writer.writerows(data_dicts)
 
+
 def create_output_dirs(base: str) -> None:
-    pass
+    """
+    Create the output directories if they don't exist.
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("input_path", type=str)
-    parser.add_argument("--fps", type=int, default=30)
-    parser.add_argument("--frame_length", type=int, default=4096)
-    parser.add_argument("--hop_length", type=int, default=2048)
-    args = parser.parse_args()
-
-    # Separate vocals, drums, bass, and other stems using Demucs.
-    # This will create a directory structure like:
-    # separated/htdemucs/filename/
-    # ├── vocals.wav
-    # ├── drums.wav
-    # ├── bass.wav
-    # └── other.wav
-    print(f"\nRunning demucs on {args.input_path}...\n")
-    demucs.separate.main([args.input_path])
-
-    # Create the output directories if they don't exist.
-    base = os.path.splitext(os.path.basename(args.input_path))[0]
+    The directory structure will be:
+    output/<base>
+    ├── demucs/
+    ├── larsnet/
+    ├── nussl/
+    └── features/
+    
+    Parameters
+    ----------
+    base : str
+        The name of the input file without the extension.
+    """
     if not os.path.exists("output"):
         os.makedirs("output")
     if not os.path.exists(os.path.join("output", base)):
@@ -112,11 +106,27 @@ def main():
     if not os.path.exists(os.path.join("output", base, "larsnet")):
         os.makedirs(os.path.join("output", base, "larsnet"))
     if not os.path.exists(os.path.join("output", base, "nussl")):
-        os.makedirs(os.path.join("output", base), "nussl")
+        os.makedirs(os.path.join("output", base, "nussl"))
     if not os.path.exists(os.path.join("output", base, "features")):
         os.makedirs(os.path.join("output", base, "features"))
 
-    # Put the demucs audio in its proper place.
+
+def move_demucs_files(base: str) -> None:
+    """
+    Move the Demucs files to the appropriate directory.
+
+    The directory structure will be:
+    output/<base>/demucs/
+    ├── vocals.wav
+    ├── drums.wav
+    ├── bass.wav
+    └── other.wav
+
+    Parameters
+    ----------
+    base : str
+        The name of the input file without the extension.
+    """
     shutil.move(
         os.path.join("separated", "htdemucs", base, "vocals.wav"),
         os.path.join("output", base, "demucs", "vocals.wav"))
@@ -132,25 +142,92 @@ def main():
     
     shutil.rmtree("separated")
 
+
+def move_larsnet_files(larsnet_path: str) -> None:
+    """
+    Move the LarsNet files to the appropriate directory.
+
+    The directory structure will be:
+    output/<base>/larsnet/
+    ├── kick.wav
+    ├── snare.wav
+    ├── toms.wav
+    ├── hihat.wav
+    └── cymbals.wav
+
+    Parameters
+    ----------
+    larsnet_path : str
+        The path to the LarsNet output directory.
+    """
+    shutil.move(
+        os.path.join(larsnet_path, "kick", "drums.wav"),
+        os.path.join(larsnet_path, "kick.wav"))
+    shutil.move(
+        os.path.join(larsnet_path, "snare", "drums.wav"),
+        os.path.join(larsnet_path, "snare.wav"))
+    shutil.move(
+        os.path.join(larsnet_path, "toms", "drums.wav"),
+        os.path.join(larsnet_path, "toms.wav"))
+    shutil.move(
+        os.path.join(larsnet_path, "hihat", "drums.wav"),
+        os.path.join(larsnet_path, "hihat.wav"))
+    shutil.move(
+        os.path.join(larsnet_path, "cymbals", "drums.wav"),
+        os.path.join(larsnet_path, "cymbals.wav"))
+
+    shutil.rmtree(os.path.join(larsnet_path, "input"))
+    shutil.rmtree(os.path.join(larsnet_path, "kick"))
+    shutil.rmtree(os.path.join(larsnet_path, "snare"))
+    shutil.rmtree(os.path.join(larsnet_path, "toms"))
+    shutil.rmtree(os.path.join(larsnet_path, "hihat"))
+    shutil.rmtree(os.path.join(larsnet_path, "cymbals"))
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("input_path", type=str)
+    parser.add_argument("--fps", type=int, default=30)
+    parser.add_argument("--frame_length", type=int, default=4096)
+    parser.add_argument("--hop_length", type=int, default=2048)
+    args = parser.parse_args()
+
+    # Create the output directories if they don't exist.
+    base = os.path.splitext(os.path.basename(args.input_path))[0]
+    larsnet_path = os.path.join("output", base, "larsnet")
+    demucs_path = os.path.join("output", base, "demucs")
+    create_output_dirs(base)
+
+    # Separate vocals, drums, bass, and other stems using Demucs.
+    # You can comment this out if you have already run Demucs.
+    print(f"\nRunning demucs on {args.input_path}...\n")
+    demucs.separate.main([args.input_path])
+    move_demucs_files(base)    
+
     # Separate further using larsnet...
     print("\nRunning second-level \"drums\" separation with larsnet...\n")
-    larsnet_path = os.path.join("output", base, "larsnet")
+    if not os.path.exists(os.path.join(larsnet_path, "input")):
+        os.makedirs(os.path.join(larsnet_path, "input"))
+                        
     shutil.copy(
-        os.path.join("output", base, "demucs", "drums.wav"),
-        os.path.join(larsnet_path, "drums.wav"))
+        os.path.join(demucs_path, "drums.wav"),
+        os.path.join(larsnet_path, "input", "drums.wav"))
     
-    # larsnet.separate.separate(larsnet_path, larsnet_path, 
-    #                           wiener_exponent=None, device='cpu')
+    larsnet.separate.separate(os.path.join(larsnet_path, "input"), 
+                              larsnet_path, wiener_exponent=None, device='cpu')
     
-    # Load the separated audio files for further separation with nussl.
-    vocals = nussl.AudioSignal(
-        os.path.join("output", base, "demucs", "vocals.wav"))
-    drums = nussl.AudioSignal(
-        os.path.join("output", base, "demucs", "drums.wav"))
-    bass = nussl.AudioSignal(
-        os.path.join("output", base, "demucs", "bass.wav"))
-    other = nussl.AudioSignal(
-        os.path.join("output", base, "demucs", "other.wav"))
+    move_larsnet_files(larsnet_path)
+    
+    # Load the separated audio files for further separation with nussl
+    # and feature extraction.
+    vocals = nussl.AudioSignal(os.path.join(demucs_path, "vocals.wav"))
+    kick = nussl.AudioSignal(os.path.join(larsnet_path, "kick.wav"))
+    snare = nussl.AudioSignal(os.path.join(larsnet_path, "snare.wav"))
+    toms = nussl.AudioSignal(os.path.join(larsnet_path, "toms.wav"))
+    hihat = nussl.AudioSignal(os.path.join(larsnet_path, "hihat.wav"))
+    cymbals = nussl.AudioSignal(os.path.join(larsnet_path, "cymbals.wav"))
+    bass = nussl.AudioSignal(os.path.join(demucs_path, "bass.wav"))
+    other = nussl.AudioSignal(os.path.join(demucs_path, "other.wav"))
     
     # Separate further using nussl...
     print("\nRunning second-level \"other\" separation with nussl...\n")
@@ -160,8 +237,12 @@ def main():
 
     # Create a list of the separated audio signals and resample them.
     sources = [
-        vocals, 
-        drums, 
+        vocals,
+        kick,
+        snare,
+        toms,
+        hihat,
+        cymbals, 
         bass, 
         other_split[0],
         other_split[1]
