@@ -80,6 +80,8 @@ def extract_features(
         writer.writeheader()
         writer.writerows(data_dicts)
 
+def create_output_dirs(base: str) -> None:
+    pass
 
 def main():
     parser = argparse.ArgumentParser()
@@ -137,8 +139,8 @@ def main():
         os.path.join("output", base, "demucs", "drums.wav"),
         os.path.join(larsnet_path, "drums.wav"))
     
-    larsnet.separate.separate(larsnet_path, larsnet_path, 
-                              wiener_exponent=None, device='cpu')
+    # larsnet.separate.separate(larsnet_path, larsnet_path, 
+    #                           wiener_exponent=None, device='cpu')
     
     # Load the separated audio files for further separation with nussl.
     vocals = nussl.AudioSignal(
@@ -152,8 +154,8 @@ def main():
     
     # Separate further using nussl...
     print("\nRunning second-level \"other\" separation with nussl...\n")
-    timbre_separator = nussl.separation.primitive.TimbreClustering(
-        other, 2, 50)
+    timbre_separator = nussl.separation.spatial.SpatialClustering(
+        other, 2)
     other_split = timbre_separator()
 
     # Create a list of the separated audio signals and resample them.

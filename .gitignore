@@ -5,6 +5,10 @@ separated/
 output/
 larsnet/
 
+# Touchdesigner
+Backup/
+FinalProj.*.toe
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
