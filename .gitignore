@@ -8,6 +8,7 @@ larsnet/
 # Touchdesigner
 Backup/
 FinalProj.*.toe
+visual_generator.*.toe
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
