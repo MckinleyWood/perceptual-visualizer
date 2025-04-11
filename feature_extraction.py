@@ -61,17 +61,18 @@ def ild(y: np.ndarray) -> np.ndarray:
     
     Parameters
     ----------
-    S : np.ndarray
-        The magnitude spectrum of a stereo signal. This should have 
-        shape (2, num_samples, num_frames).
+    y : np.ndarray
+        The samples of a (framed) stereo signal. This should have shape
+        (2, num_samples, num_frames).
     
     Returns
     -------
     out : np.ndarray
         Each entry in the array is the ILD of a frame in the signal, 
-        where -1 is audio only in the left channel, 1 is audio only in
-        the right channel, and 0 is equal level in both channels.
+        where 0 is audio only in the left channel, 1 is audio only in
+        the right channel, and 0.5 is equal level in both channels.
     """
+    # Calculate the RMS amplitude of each channel
     rms = np.sqrt(np.mean(y ** 2, axis=1))
 
     # Combine the two channel amplitudes
@@ -83,7 +84,6 @@ def ild(y: np.ndarray) -> np.ndarray:
     # Calculate the ILD for frames where the total amplitude is greater than 0
     valid = combined_rms > 0
     ilds[valid] = np.arccos(rms[0, valid] / combined_rms[valid]) / np.pi * 2
-    ilds = np.arccos(rms[0] / combined_rms) / np.pi * 2
 
     return ilds
 

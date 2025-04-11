@@ -5,6 +5,8 @@ import soundfile as sf
 import os
 import numpy as np
 import feature_extraction as fe
+import time
+
 
 def timbral_clustering(input_file_path, output_folder_path, num_sources=2, window_size_s=30):
 
@@ -90,7 +92,6 @@ def timbral_clustering(input_file_path, output_folder_path, num_sources=2, windo
         sf.write(output_folder_path + f"other_timbral_{i}.wav", tracks[i].T, sr)
 
 
-
 def spatial_clustering(input_file_path, output_folder_path, num_sources):
     
     # Load audio
@@ -107,3 +108,21 @@ def spatial_clustering(input_file_path, output_folder_path, num_sources):
         sf.write(output_folder_path + f"other_spatial_{i}.wav", other_split[i].T, sr)
 
 
+def main():
+    # Test here
+
+    input_file_path = "/Users/owenohlson/Documents/GitHub/perceptual-visualizer/output/Parquet Courts - Tenderness/demucs/other.wav"
+    output_folder_path = "/Users/owenohlson/Documents/GitHub/perceptual-visualizer/output/Parquet Courts - Tenderness/nussl/"
+
+    start_time = time.time()
+    spatial_clustering(input_file_path, output_folder_path, num_sources=2)
+    spatial_time = time.time()
+    print(f"Spatial clustering time taken: {spatial_time - start_time} seconds")
+
+    timbral_clustering(input_file_path, output_folder_path, num_sources=2, window_size_s=30, clustering='timbral')
+    timbral_time = time.time()
+    print(f"Timbral clustering time taken: {timbral_time - spatial_time} seconds")
+
+
+if __name__ == "__main__":
+    main()

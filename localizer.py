@@ -61,7 +61,8 @@ def extract_features(
 
     # Calculate the features.
     volumes = fe.rms_volume(y)
-    x_pos = fe.x_pos(y, D, sr)
+    # x_pos = fe.x_pos(y, D, sr)
+    x_pos = fe.ild(y)
     msws = fe.msw(y)
     centroids = fe.centroid(S, sr)
     bandwidths = fe.bandwidth(S, sr)
@@ -110,6 +111,8 @@ def create_output_dirs(base: str) -> None:
         os.makedirs(os.path.join("output", base, "nussl"))
     if not os.path.exists(os.path.join("output", base, "features")):
         os.makedirs(os.path.join("output", base, "features"))
+    if not os.path.exists(os.path.join("output", base, "larsnet", "input")):
+        os.makedirs(os.path.join("output", base, "larsnet", "input"))
 
 
 def move_demucs_files(base: str) -> None:
@@ -201,25 +204,19 @@ def main():
     demucs_path = os.path.join("output", base, "demucs")
     create_output_dirs(base)
 
-    # Separate vocals, drums, bass, and other stems using Demucs.
+    # Separate vocals, drums, bass, and other stems using Demucs
     # You can comment this out if you have already run Demucs.
-    print(f"\nRunning demucs on {args.input_path}...\n")
-    demucs.separate.main([args.input_path])
-    move_demucs_files(base)    
+    # print(f"\nRunning demucs on {args.input_path}...\n")
+    # demucs.separate.main([args.input_path])
+    # move_demucs_files(base)    
 
-    # Separate further using larsnet...
-    print("\nRunning second-level \"drums\" separation with larsnet...\n")
-    if not os.path.exists(os.path.join(larsnet_path, "input")):
-        os.makedirs(os.path.join(larsnet_path, "input"))
-                        
-    shutil.copy(
-        os.path.join(demucs_path, "drums.wav"),
-        os.path.join(larsnet_path, "input", "drums.wav"))
-    
-    larsnet.separate.separate(os.path.join(larsnet_path, "input"), 
-                              larsnet_path, wiener_exponent=None, device='cpu')
-    
-    move_larsnet_files(larsnet_path)
+    # Separate the drums further using larsnet
+    # print("\nRunning second-level \"drums\" separation with larsnet...\n")
+    # shutil.copy(os.path.join(demucs_path, "drums.wav"),
+    #             os.path.join(larsnet_path, "input", "drums.wav"))
+    # larsnet.separate.separate(os.path.join(larsnet_path, "input"), 
+    #                           larsnet_path, wiener_exponent=None, device='cpu')
+    # move_larsnet_files(larsnet_path)
     
     # Load the separated audio files for further separation with nussl
     # and feature extraction.
@@ -244,6 +241,16 @@ def main():
         sep.timbral_clustering(other_path, nussl_output_path, args.num_sources)
     else:
         raise ValueError(f"Invalid clustering method: {args.clustering}")
+    
+    # sc_separator = nussl.separation.spatial.SpatialClustering(
+    #     other, 2, clustering_type="KMeans")
+    # sc_separator_gmm = nussl.separation.spatial.SpatialClustering(
+    #     other, 2, clustering_type="GaussianMixture") 
+    # tc_separator = nussl.separation.primitive.TimbreClustering(
+    #     other, 2, 6)
+    # ec_separator = nussl.separation.composite.EnsembleClustering(
+    #     other, 2, [sc_separator, sc_separator_gmm, tc_separator], num_cascades=2)
+    # other_split = sc_separator()
 
     # Create a list of the separated audio signals and resample them.
     sources = [
