@@ -23,6 +23,7 @@ scipy.signal.blackman = sw.blackman
 import nussl
 
 import feature_extraction as fe
+import other_separation as sep
 
 # LarsNet also requires external download of pretrained models found here:
 # https://drive.usercontent.google.com/download?id=1U8-5924B1ii1cjv9p0MTPzayb00P4qoL&export=download&authuser=0
@@ -190,6 +191,8 @@ def main():
     parser.add_argument("--fps", type=int, default=30)
     parser.add_argument("--frame_length", type=int, default=4096)
     parser.add_argument("--hop_length", type=int, default=2048)
+    parser.add_argument("--separator", type=str, default="spatial")
+    parser.add_argument("--num_sources", type=int, default=2)
     args = parser.parse_args()
 
     # Create the output directories if they don't exist.
@@ -231,9 +234,16 @@ def main():
     
     # Separate further using nussl...
     print("\nRunning second-level \"other\" separation with nussl...\n")
-    timbre_separator = nussl.separation.spatial.SpatialClustering(
-        other, 2)
-    other_split = timbre_separator()
+    
+    other_path = os.path.join(demucs_path, "other.wav")
+    nussl_output_path = os.path.join("output", base, "nussl")
+
+    if args.clustering == "spatial":
+        sep.spatial_clustering(other_path, nussl_output_path, args.num_sources)
+    elif args.clustering == "timbral":
+        sep.timbral_clustering(other_path, nussl_output_path, args.num_sources)
+    else:
+        raise ValueError(f"Invalid clustering method: {args.clustering}")
 
     # Create a list of the separated audio signals and resample them.
     sources = [
@@ -244,10 +254,10 @@ def main():
         hihat,
         cymbals, 
         bass, 
-        other_split[0],
-        other_split[1]
-    ]
-    
+        ]
+    for i in range(args.num_sources):
+        sources.append(nussl.AudioSignal(os.path.join(nussl_output_path, f"{i}.wav")))
+
     feature_sr = args.fps * args.hop_length 
     sources = [s.audio_data for s in sources]
     sources = [librosa.resample(y, orig_sr=44100, target_sr=feature_sr) 

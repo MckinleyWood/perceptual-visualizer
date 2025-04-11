@@ -1,17 +1,14 @@
 
 import nussl
-#import matplotlib.pyplot as plt
 import librosa
 import soundfile as sf
-#from sklearn.decomposition import NMF
 import os
 import numpy as np
 import feature_extraction as fe
-#import time
 
-def timbral_clustering(input_file_path, output_folder_path, num_sources=2, window_size_s=30, clustering="timbral"):
+def timbral_clustering(input_file_path, output_folder_path, num_sources=2, window_size_s=30):
 
-    print("ignore this stupid ass convergence warning^")
+    print("ignore convergence warning^")
 
     #load audio
     x,sr = librosa.load(input_file_path, sr=None, mono=False)
@@ -36,15 +33,8 @@ def timbral_clustering(input_file_path, output_folder_path, num_sources=2, windo
 
     #perform clustering on each window
     for j, window in enumerate(windows):
-    
         signal = nussl.AudioSignal(audio_data_array=window, sample_rate=sr)
-
-        if clustering == "timbral":
-            separator = nussl.separation.primitive.TimbreClustering(signal, num_sources, 50, mask_type='binary')
-        # elif clustering == "projet":
-        #     separator = nussl.separation.spatial.Projet(signal, num_sources, num_iterations=50, mask_type='binary')
-        else:
-            raise ValueError(f"Invalid clustering method: {clustering}")
+        separator = nussl.separation.primitive.TimbreClustering(signal, num_sources, 50, mask_type='binary')
 
         other_split = separator() 
 
@@ -81,7 +71,7 @@ def timbral_clustering(input_file_path, output_folder_path, num_sources=2, windo
         #assemble list of processed windows
         clustered_windows[j] = other_split_sorted
 
-        print(f"Window {j+1}/{len(windows)} split successfully! What a relief!")
+        print(f"Window {j+1}/{len(windows)} split successfully")
 
 
     #clustered_windows is now the whole collection of data
@@ -116,19 +106,4 @@ def spatial_clustering(input_file_path, output_folder_path, num_sources):
         other_split[i] = other_split[i].audio_data
         sf.write(output_folder_path + f"other_spatial_{i}.wav", other_split[i].T, sr)
 
-
-
-#Test here
-
-# input_file_path = "/Users/owenohlson/Documents/GitHub/perceptual-visualizer/output/Parquet Courts - Tenderness/demucs/other.wav"
-# output_folder_path = "/Users/owenohlson/Documents/GitHub/perceptual-visualizer/output/Parquet Courts - Tenderness/nussl/"
-
-# start_time = time.time()
-# spatial_clustering(input_file_path, output_folder_path, num_sources=2)
-# spatial_time = time.time()
-# print(f"Spatial clustering time taken: {spatial_time - start_time} seconds")
-
-# timbral_clustering(input_file_path, output_folder_path, num_sources=2, window_size_s=30, clustering='timbral')
-# timbral_time = time.time()
-# print(f"Timbral clustering time taken: {timbral_time - spatial_time} seconds")
 
