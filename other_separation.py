@@ -8,7 +8,8 @@ import feature_extraction as fe
 import time
 
 
-def timbral_clustering(input_file_path, output_folder_path, num_sources=2, window_size_s=30):
+def timbral_clustering(input_file_path, output_folder_path, num_sources=2, 
+                       window_size_s=30):
 
     print("ignore convergence warning^")
 
@@ -92,20 +93,43 @@ def timbral_clustering(input_file_path, output_folder_path, num_sources=2, windo
         sf.write(output_folder_path + f"other_timbral_{i}.wav", tracks[i].T, sr)
 
 
-def spatial_clustering(input_file_path, output_folder_path, num_sources):
+# def spatial_clustering(input_file_path, output_folder_path, num_sources):
     
-    # Load audio
-    x,sr = librosa.load(input_file_path, sr=None, mono=False)
-    signal = nussl.AudioSignal(audio_data_array=x, sample_rate=sr)
+#     # Load audio
+#     x,sr = librosa.load(input_file_path, sr=None, mono=False)
+#     signal = nussl.AudioSignal(audio_data_array=x, sample_rate=sr)
 
+#     # Separate
+#     separator = nussl.separation.spatial.SpatialClustering(signal,num_sources, mask_type='binary')
+#     other_split = separator() 
+
+#     # Save audio data as .wav files
+#     for i in range(num_sources):
+#         other_split[i] = other_split[i].audio_data
+#         sf.write(output_folder_path + f"other_spatial_{i}.wav", other_split[i].T, sr)
+
+
+def spatial_clustering(y, num_sources, clustering_type='KMeans'):
+    """
+    Perform spatial clustering on the input audio signal.
+    
+    Parameters
+    ----------
+    y : nussl.AudioSignal
+        The input audio signal.
+    num_sources : int
+        The number of sources to separate.
+        
+    Returns
+    -------
+    list[nussl.AudioSignal]
+        The {num_sources} separated audio signals.
+    """
     # Separate
-    separator = nussl.separation.spatial.SpatialClustering(signal,num_sources, mask_type='binary')
+    separator = nussl.separation.spatial.SpatialClustering(
+        y, num_sources, clustering_type=clustering_type)
     other_split = separator() 
-
-    # Save audio data as .wav files
-    for i in range(num_sources):
-        other_split[i] = other_split[i].audio_data
-        sf.write(output_folder_path + f"other_spatial_{i}.wav", other_split[i].T, sr)
+    return other_split
 
 
 def main():

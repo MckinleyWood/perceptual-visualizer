@@ -46,7 +46,6 @@ def extract_features(
     """
     """
     # y will be the input signal to analyze.
-    # y, _ = librosa.load(filename, sr=sr, duration=duration, mono=False)
     
     # D will be the (complex) STFT of y.
     D = librosa.stft(y, n_fft=frame_length, hop_length=hop_length, 
@@ -60,18 +59,17 @@ def extract_features(
     y = y * np.hanning(frame_length)[None, :, None]
 
     # Calculate the features.
-    volumes = fe.rms_volume(y)
-    # x_pos = fe.x_pos(y, D, sr)
-    x_pos = fe.ild(y)
-    msws = fe.msw(y)
-    centroids = fe.centroid(S, sr)
-    bandwidths = fe.bandwidth(S, sr)
+    x_pos = fe.x_pos(y, D, sr)
+    y_pos = fe.y_pos(S, sr)
+    x_width = fe.x_width(y)
+    y_width = fe.y_width(S, sr)
+    strengths = fe.strength(y)
 
     # Create a CSV file with the features.
     data_frames = [
         DataFrame(xp, yp, xw, yw, s)
         for xp, yp, xw, yw, s 
-        in zip(x_pos, centroids, msws, bandwidths, volumes)
+        in zip(x_pos, y_pos, x_width, y_width, strengths)
     ]
     
     data_dicts = [asdict(frame) for frame in data_frames]
@@ -206,17 +204,17 @@ def main():
 
     # Separate vocals, drums, bass, and other stems using Demucs
     # You can comment this out if you have already run Demucs.
-    # print(f"\nRunning demucs on {args.input_path}...\n")
-    # demucs.separate.main([args.input_path])
-    # move_demucs_files(base)    
+    print(f"\nRunning demucs on {args.input_path}...\n")
+    demucs.separate.main([args.input_path])
+    move_demucs_files(base)    
 
     # Separate the drums further using larsnet
-    # print("\nRunning second-level \"drums\" separation with larsnet...\n")
-    # shutil.copy(os.path.join(demucs_path, "drums.wav"),
-    #             os.path.join(larsnet_path, "input", "drums.wav"))
-    # larsnet.separate.separate(os.path.join(larsnet_path, "input"), 
-    #                           larsnet_path, wiener_exponent=None, device='cpu')
-    # move_larsnet_files(larsnet_path)
+    print("\nRunning larsnet drum separation...\n")
+    shutil.copy(os.path.join(demucs_path, "drums.wav"),
+                os.path.join(larsnet_path, "input", "drums.wav"))
+    larsnet.separate.separate(os.path.join(larsnet_path, "input"), 
+                              larsnet_path, wiener_exponent=None, device='cpu')
+    move_larsnet_files(larsnet_path)
     
     # Load the separated audio files for further separation with nussl
     # and feature extraction.
@@ -230,27 +228,28 @@ def main():
     other = nussl.AudioSignal(os.path.join(demucs_path, "other.wav"))
     
     # Separate further using nussl...
-    print("\nRunning second-level \"other\" separation with nussl...\n")
+    print("\nRunning nussl \"other\" separation...")
     
     other_path = os.path.join(demucs_path, "other.wav")
     nussl_output_path = os.path.join("output", base, "nussl")
 
-    if args.clustering == "spatial":
-        sep.spatial_clustering(other_path, nussl_output_path, args.num_sources)
-    elif args.clustering == "timbral":
-        sep.timbral_clustering(other_path, nussl_output_path, args.num_sources)
-    else:
-        raise ValueError(f"Invalid clustering method: {args.clustering}")
+    # if args.clustering == "spatial":
+    #     sep.spatial_clustering(other_path, nussl_output_path, args.num_sources)
+    # elif args.clustering == "timbral":
+    #     sep.timbral_clustering(other_path, nussl_output_path, args.num_sources)
+    # else:
+    #     raise ValueError(f"Invalid clustering method: {args.clustering}")
     
-    # sc_separator = nussl.separation.spatial.SpatialClustering(
-    #     other, 2, clustering_type="KMeans")
-    # sc_separator_gmm = nussl.separation.spatial.SpatialClustering(
-    #     other, 2, clustering_type="GaussianMixture") 
-    # tc_separator = nussl.separation.primitive.TimbreClustering(
-    #     other, 2, 6)
-    # ec_separator = nussl.separation.composite.EnsembleClustering(
-    #     other, 2, [sc_separator, sc_separator_gmm, tc_separator], num_cascades=2)
-    # other_split = sc_separator()
+    sc_separator = nussl.separation.spatial.SpatialClustering(
+        other, args.num_sources, clustering_type="KMeans")
+    sc_separator_gmm = nussl.separation.spatial.SpatialClustering(
+        other, args.num_sources, clustering_type="GaussianMixture") 
+    tc_separator = nussl.separation.primitive.TimbreClustering(
+        other, args.num_sources, 6)
+    ec_separator = nussl.separation.composite.EnsembleClustering(
+        other, args.num_sources, 
+        [sc_separator, sc_separator_gmm, tc_separator], num_cascades=2)
+    other_split = sc_separator_gmm()
 
     # Create a list of the separated audio signals and resample them.
     sources = [
@@ -260,10 +259,10 @@ def main():
         toms,
         hihat,
         cymbals, 
-        bass, 
-        ]
+        bass
+    ]
     for i in range(args.num_sources):
-        sources.append(nussl.AudioSignal(os.path.join(nussl_output_path, f"{i}.wav")))
+        sources.append(other_split[i])
 
     feature_sr = args.fps * args.hop_length 
     sources = [s.audio_data for s in sources]
