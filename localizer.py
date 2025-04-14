@@ -3,6 +3,10 @@ from dataclasses import dataclass, asdict
 import csv
 import os
 import shutil
+import sys
+
+# We are not using MusDB and this keeps nussl happy.
+sys.modules['musdb'] = __import__('musdb_dummy')
 
 import demucs.separate
 import larsnet
@@ -10,7 +14,7 @@ import librosa
 import numpy as np
 import soundfile as sf
 
-# Since nussl is deprecated, we need to patch some things for it to work
+# Since nussl is deprecated, we need to patch some things for it to work.
 import scipy.signal.windows as sw
 import scipy.signal
 
