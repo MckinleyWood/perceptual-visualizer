@@ -7,7 +7,7 @@ Let people know what your project can do specifically. Provide context and add a
 Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
 
 ## Installation and Usage
-This project strings together a number of tools and programs, not all of which were designed to be run in series like this. As a result after cloning this repository, getting it up and running takes a few more steps. The following is one way to set things up that will probably work on a Mac, although you may need to do a few more things depending on your system and configuration:
+This project strings together a number of tools and programs, not all of which were designed to be run in series like this. As a result after cloning this repository, getting it up and running takes a few more steps. The following is one way to set things up that will probably work, although you may need to do a few more things depending on your system and configuration:
 
 ### Step 1: Set up your environment
 First clone this repository:
@@ -22,12 +22,19 @@ Finally, activate your new vitual environment:
 ```
 source venv/bin/activate
 ```
+On Windows, the commands will look like
+```
+git clone https://github.com/MckinleyWood/perceptual-visualizer.git
+cd perceptual-visualizer
+python -m venv venv
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+venv\Scripts\activate
+```
 
 ### Step 2: Install Libraries
 This project uses [Demucs](https://github.com/adefossez/demucs) and [nussl](https://github.com/nussl/nussl) to do sound source separation. You can install them with `pip`:
 ```
-pip install demucs
-pip install nussl
+pip install demucs nussl
 ```
 There may be a few dependencies that are not automatically installed, so watch out for that.
 
@@ -36,7 +43,7 @@ This project uses [LarsNet](https://github.com/polimi-ispl/larsnet) for its indi
 ```
 pip install .
 ```
-You will then have to download the pretrained models from the [LarsNet page](https://github.com/polimi-ispl/larsnet) and copy the `pretrained_larsnet_models` folder into the larsnet folder at `venv/lib/python3.10/site-packages/larsnet`.
+You will then have to download the pretrained models from the [LarsNet page](https://github.com/polimi-ispl/larsnet), unzip them, and copy the folder into the larsnet folder at `venv/lib/python3.10/site-packages/larsnet/` (or `venv\Lib\site-packages\larsnet\` on Windows).
 
 At this point, you should be able run the main script (ideally with a short file because it can take quite a while to run):
 ```
