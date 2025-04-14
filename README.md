@@ -36,14 +36,14 @@ This project uses [Demucs](https://github.com/adefossez/demucs) and [nussl](http
 ```
 pip install demucs nussl
 ```
-There may be a few dependencies that are not automatically installed, so watch out for that.
+There may be a few dependencies that are not automatically installed, such as [SoX](https://sourceforge.net/projects/sox/) and [FFmpeg](https://ffmpeg.org/download.html), so watch out for that.
 
 ### Step 3: Install LarsNet
 This project uses [LarsNet](https://github.com/polimi-ispl/larsnet) for its individual drum separation. LarsNet is not really set up to work as a python library, so we have made a few minor changes to its code for nicer integration. To install, navigate to `larsnet_src/` and run 
 ```
 pip install .
 ```
-You will then have to download the pretrained models from the [LarsNet page](https://github.com/polimi-ispl/larsnet), unzip them, and copy the folder into the larsnet folder at `venv/lib/python3.10/site-packages/larsnet/` (or `venv\Lib\site-packages\larsnet\` on Windows).
+You will then have to download the pretrained models from the [LarsNet page](https://drive.usercontent.google.com/download?id=1U8-5924B1ii1cjv9p0MTPzayb00P4qoL&export=download&authuser=0), unzip them, and copy the folder into the larsnet folder at `venv/lib/python3.10/site-packages/larsnet/` (or `venv\Lib\site-packages\larsnet\` on Windows).
 
 At this point, you should be able run the main script (ideally with a short file because it can take quite a while to run):
 ```
