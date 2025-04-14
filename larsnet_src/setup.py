@@ -4,8 +4,9 @@ setup(
     name="larsnet",
     version="0.1",
     description="Deep Drum Source Separation with LarsNet",
-    author="Your Name",
+    author="Alessandro Ilic Mezza and Riccardo Giampiccolo and Alberto Bernardini and Augusto Sarti",
     packages=find_packages(),
+    include_package_data=True,
     install_requires=[
         "cffi>=1.16.0",
         "filelock>=3.13.1",
@@ -19,12 +20,8 @@ setup(
         "sympy>=1.12",
         "torch>=2.1.2",
         "torchaudio>=2.1.2",
-        # "torchtriton>=2.1.0",
         "tqdm>=4.66.1",
-        # "triton>=2.1.0",
         "typing-extensions>=4.7.1",
         "markupsafe>=2.1.1",
-        # Optionally include gmpy2 if it's required and installs smoothly:
-        # "gmpy2>=2.1.2",
     ],
 )

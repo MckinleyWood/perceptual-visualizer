@@ -1,6 +1,4 @@
-.DS_store
-pvis/
-audio/
+# Program output
 separated/
 output/
 larsnet/
@@ -9,6 +7,12 @@ larsnet/
 Backup/
 FinalProj.*.toe
 visual_generator.*.toe
+
+# Common virtual environment folders
+venv/
+env/
+.venv/
+.env/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -181,3 +185,8 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Misc
+.DS_store
+pvis/
+audio/
