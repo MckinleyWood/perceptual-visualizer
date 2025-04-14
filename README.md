@@ -1,5 +1,11 @@
 # perceptual-visualizer
 
+to do:
+* properly integrate other_separation.py
+* python makes {max_num_sources} other files every time, populates the extra ones with 0s
+
+
+
 ## Description
 Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
 
@@ -51,7 +57,11 @@ python localizer.py path/to/audio/file.wav
 ```
 This should produce a folder called `output` with the same format as `example_output`.
 
-### Step 4: Touchdesigner
+### Step 4: TouchDesigner
+(Insert some stuff about where to get touchdesigner and how to use the toe here)
+
+### Step 5: Command-line Arguments
+Write about command line argument
 
 ## Support
 Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
