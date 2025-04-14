@@ -7,18 +7,18 @@ Let people know what your project can do specifically. Provide context and add a
 Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
 
 ## Installation and Usage
-This project strings together a number of tools and programs, not all of which were designed to be run in series like this. As a result after cloning this repository, getting it up and running takes a few more steps. The following is one way to set things up that will probably work, although you may need to do a few more things depending on your system and configuration:
+This project strings together a number of tools and programs, not all of which were designed to be run in series like this. As a result after cloning this repository, getting it up and running takes a few more steps. The following is one way to set things up that will probably work on a Mac, although you may need to do a few more things depending on your system and configuration:
 
 ### Step 1: Set up your environment
 First clone this repository:
 ```
 git clone https://github.com/MckinleyWood/perceptual-visualizer.git
 ```
-Then navigate to the root directory and create a new virtual environment:
+This project uses older libraries that do not work with the latest python versions. If you do not have Python 3.10 installed, you will have to do that first. Navigate to the root directory and create a new virtual environment:
 ```
 python3.10 -m venv venv
 ```
-This project uses older libraries that do not work with the latest python versions. If you do not have Python 3.10 installed, you will have to do that first. Finally, activate your new vitual environment:
+Finally, activate your new vitual environment:
 ```
 source venv/bin/activate
 ```
