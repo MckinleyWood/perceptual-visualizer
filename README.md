@@ -1,9 +1,7 @@
 # perceptual-visualizer
 
 to do:
-* properly integrate other_separation.py
-* python makes {max_num_sources} other files every time, populates the extra ones with 0s
-
+* finish README
 
 
 ## Description
@@ -13,10 +11,10 @@ Let people know what your project can do specifically. Provide context and add a
 Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
 
 ## Installation and Usage
-This project strings together a number of tools and programs, not all of which were designed to be run in series like this. As a result after cloning this repository, getting it up and running takes a few more steps. The following is one way to set things up that will probably work, although you may need to do a few more things depending on your system and configuration:
+This project strings together a number of tools and programs, not all of which were designed to be run in series like this. As a result, after cloning this repository, getting it up and running takes a few more steps. The following is one way to set things up that will probably work, although you may need to do a few more things depending on your system and configuration.
 
 ### Step 1: Set up your environment
-First clone this repository:
+First, clone this repository:
 ```
 git clone https://github.com/MckinleyWood/perceptual-visualizer.git
 ```
@@ -42,16 +40,16 @@ This project uses [Demucs](https://github.com/adefossez/demucs) and [nussl](http
 ```
 pip install demucs nussl
 ```
-There may be a few dependencies that are not automatically installed, such as [SoX](https://sourceforge.net/projects/sox/) and [FFmpeg](https://ffmpeg.org/download.html), so watch out for that.
+You will also need a few non-Python tools, namely [SoX](https://sourceforge.net/projects/sox/) and [FFmpeg](https://ffmpeg.org/download.html), so make sure you have those installed as well.
 
 ### Step 3: Install LarsNet
-This project uses [LarsNet](https://github.com/polimi-ispl/larsnet) for its individual drum separation. LarsNet is not really set up to work as a python library, so we have made a few minor changes to its code for nicer integration. To install, navigate to `larsnet_src/` and run 
+This project uses [LarsNet](https://github.com/polimi-ispl/larsnet) for its individual drum separation. LarsNet is not really set up to work as a Python library, so we have made a few minor changes to its code for nicer integration. To install, navigate to `larsnet_src/` and run 
 ```
 pip install .
 ```
 You will then have to download the pretrained models from the [LarsNet page](https://drive.usercontent.google.com/download?id=1U8-5924B1ii1cjv9p0MTPzayb00P4qoL&export=download&authuser=0), unzip them, and copy the folder into the larsnet folder at `venv/lib/python3.10/site-packages/larsnet/` (or `venv\Lib\site-packages\larsnet\` on Windows).
 
-At this point, you should be able run the main script (ideally with a short file because it can take quite a while to run):
+At this point, you should be able run the main script (I would reccomend testing with a short file because it can take quite a while to run):
 ```
 python localizer.py path/to/audio/file.wav
 ```
@@ -61,7 +59,7 @@ This should produce a folder called `output` with the same format as `example_ou
 (Insert some stuff about where to get touchdesigner and how to use the toe here)
 
 ### Step 5: Command-line Arguments
-Write about command line argument
+Write about command line arguments
 
 ## Support
 Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.

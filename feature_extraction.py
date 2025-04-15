@@ -136,12 +136,13 @@ def itd(D: np.ndarray, sr: int) -> np.ndarray:
 
 def msw(y: np.ndarray) -> np.ndarray:
     """
-    Uses mid-side processing to porvide a measure of stereo width.
+    Uses mid-side processing to provide a measure of stereo width.
     
     Parameters
     ----------
     y : np.ndarray
-        The samples of a stereo signal.
+        The samples of a (framed) stereo signal. This should have shape
+        (2, num_samples, num_frames).
     
     Returns
     -------

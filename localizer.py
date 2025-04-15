@@ -9,7 +9,7 @@ import sys
 sys.modules['musdb'] = __import__('musdb_dummy')
 
 import demucs.separate
-import larsnet
+import larsnet.separate
 import librosa
 import numpy as np
 import soundfile as sf
@@ -18,7 +18,6 @@ import soundfile as sf
 import scipy.signal.windows as sw
 import scipy.signal
 
-import larsnet.separate
 np.float_ = np.float64
 scipy.signal.hamming = sw.hamming
 scipy.signal.hann = sw.hann
@@ -29,8 +28,9 @@ import nussl
 import feature_extraction as fe
 import other_separation as sep
 
-# LarsNet also requires external download of pretrained models found here:
-# https://drive.usercontent.google.com/download?id=1U8-5924B1ii1cjv9p0MTPzayb00P4qoL&export=download&authuser=0
+
+MAX_OTHER_SOURCES = 3
+
 
 @dataclass
 class DataFrame:
@@ -48,6 +48,20 @@ def extract_features(
         hop_length: int, 
         sr: int) -> None:
     """
+    Extracts features from an audio signal and saves them to a CSV file.
+ 
+    Parameters
+    ----------
+    output_filename : str
+        The name of the output CSV file.
+    y : np.ndarray
+        The input audio signal.
+    frame_length : int
+        The length of the frames for STFT.
+    hop_length : int
+        The hop length for STFT.
+    sr : int
+        The sample rate of the audio signal.
     """
     # y will be the input signal to analyze.
     
@@ -196,7 +210,8 @@ def main():
     parser.add_argument("--fps", type=int, default=30)
     parser.add_argument("--frame_length", type=int, default=4096)
     parser.add_argument("--hop_length", type=int, default=2048)
-    parser.add_argument("--separator", type=str, default="spatial")
+    parser.add_argument("--clustering", type=str, default="spatial")
+    parser.add_argument("--tc_window", type=str, default="None")
     parser.add_argument("--num_sources", type=int, default=2)
     args = parser.parse_args()
 
@@ -210,7 +225,7 @@ def main():
     # You can comment this out if you have already run Demucs.
     print(f"\nRunning demucs on {args.input_path}...\n")
     demucs.separate.main([args.input_path])
-    move_demucs_files(base)    
+    move_demucs_files(base)
 
     # Separate the drums further using larsnet
     print("\nRunning larsnet drum separation...\n")
@@ -233,28 +248,20 @@ def main():
     
     # Separate further using nussl...
     print("\nRunning nussl \"other\" separation...")
-    
-    other_path = os.path.join(demucs_path, "other.wav")
-    nussl_output_path = os.path.join("output", base, "nussl")
 
-    # if args.clustering == "spatial":
-    #     sep.spatial_clustering(other_path, nussl_output_path, args.num_sources)
-    # elif args.clustering == "timbral":
-    #     sep.timbral_clustering(other_path, nussl_output_path, args.num_sources)
-    # else:
-    #     raise ValueError(f"Invalid clustering method: {args.clustering}")
+    if args.clustering == "spatial":
+        other_split = sep.spatial_clustering(other, args.num_sources, 
+                        clustering_type="GaussianMixture")
+    elif args.clustering == "timbral":
+        if args.tc_window == "None":
+            window_size = None
+        else:
+            window_size = int(args.tc_window)
+        other_split = sep.timbral_clustering(other, args.num_sources, 
+                        args.num_sources * 2, window_size=window_size)
+    else:
+        raise ValueError(f"Invalid clustering method: {args.clustering}")
     
-    sc_separator = nussl.separation.spatial.SpatialClustering(
-        other, args.num_sources, clustering_type="KMeans")
-    sc_separator_gmm = nussl.separation.spatial.SpatialClustering(
-        other, args.num_sources, clustering_type="GaussianMixture") 
-    tc_separator = nussl.separation.primitive.TimbreClustering(
-        other, args.num_sources, 6)
-    ec_separator = nussl.separation.composite.EnsembleClustering(
-        other, args.num_sources, 
-        [sc_separator, sc_separator_gmm, tc_separator], num_cascades=2)
-    other_split = sc_separator_gmm()
-
     # Create a list of the separated audio signals and resample them.
     sources = [
         vocals,
@@ -281,6 +288,25 @@ def main():
         extract_features(os.path.join("output", base, "features", f"{i}.csv"),
                          y, args.frame_length, args.hop_length, feature_sr)
     
+    # Write dummy files so we have the same number every time
+    total_num_files = 7 + MAX_OTHER_SOURCES
+    empty_file = np.zeros_like(sources[0])
+    num_frames = empty_file.shape[1] // args.hop_length
+    empty_frames = [DataFrame(0, 0, 0, 0, 0) for _ in range(num_frames)]
+    empty_dicts = [asdict(frame) for frame in empty_frames]
+    fieldnames = empty_dicts[0].keys()
+
+    for i in range(7 + args.num_sources, total_num_files):
+        sf.write(os.path.join("output", base, "nussl", f"{i}.wav"),
+                 empty_file.T, samplerate=feature_sr)
+        csv_filename = os.path.join("output", base, "features", f"{i}.csv")
+        with open(csv_filename, mode='w', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(empty_dicts)
+
+    shutil.copyfile(args.input_path, os.path.join("output", base, f"{base}.wav"))
+
     print("\nDone!\n")
  
 
