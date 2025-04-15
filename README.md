@@ -1,14 +1,11 @@
-# perceptual-visualizer
-
-to do:
-* finish README
-
+# Perceptual Visualizer
 
 ## Description
 Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+The goal of the Perceptual Visualizer is to produce a visualization of a stereo mix where distinct sources are represented based on their percieved spatial location. We achieve this by first source-separating the input using a combination of deep-learning libraries (Demucs and LarsNet) and unsupervised, primitive separation algorithms provided by the nussl library, and then running another script that extimates the spatial positions of the separated sources, and finally a TouchDesigner program that produces an artful visualization.
 
 ## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+Coming soon...
 
 ## Installation and Usage
 This project strings together a number of tools and programs, not all of which were designed to be run in series like this. As a result, after cloning this repository, getting it up and running takes a few more steps. The following is one way to set things up that will probably work, although you may need to do a few more things depending on your system and configuration.
@@ -26,7 +23,7 @@ Finally, activate your new vitual environment:
 ```
 source venv/bin/activate
 ```
-On Windows, the commands will look like
+On Windows, the commands will look more like this:
 ```
 git clone https://github.com/MckinleyWood/perceptual-visualizer.git
 cd perceptual-visualizer
@@ -51,24 +48,36 @@ You will then have to download the pretrained models from the [LarsNet page](htt
 
 At this point, you should be able run the main script (I would reccomend testing with a short file because it can take quite a while to run):
 ```
-python localizer.py path/to/audio/file.wav
+python pvis.py path/to/audio/file.wav
 ```
 This should produce a folder called `output` with the same format as `example_output`.
 
 ### Step 4: TouchDesigner
-(Insert some stuff about where to get touchdesigner and how to use the toe here)
+This project uses [TouchDesigner](https://derivative.ca/showcase) to generate the visuals. The free version (which is more than fine for this application) can be downloaded [here](https://derivative.ca/download). After installing TouchDesigner, all you need to do is open the `visual_generator.toe` file, click on the `masta` node, and then type the (exact!) name of the file you have just run `pvis.py` on, minus the extension. You can then press `f1` to fullscreen the output. More experienced TouchDesigner users can go in and change things like the colours of the shapes or make it output a video file, but we currently have not implemeted a super easy way to do that.
 
 ### Step 5: Command-line Arguments
-Write about command line arguments
+Additional command-line arguments may be provided to the program to change certain behaviours. Below are a few examples:
+```
+python pvis.py path/to/audio/file.wav --num_sources=3
+```
+By default, the program separates Demucs' "other" stem into two separate sources. However, it may well be the case that your song has more than two spatially distinct elements in the "other" category and you would like them to be separated. In that case, you can provide an int in the range (1, 3) to specify the number of sources in the "other" category.
+```
+python pvis.py path/to/audio/file.wav --fps=60 
+```
+By default, the program outputs 30 rows of csv values (frames) per second of audio. This can be changed to whatever you want.
+```
+python pvis.py path/to/audio/file.wav --clustering="timbral" --tc_window=30
+```
+By default, the program uses nussl's spatial clustering algorithm as that is what we have had the most success with. You can change this to timbral clustering with `--clustering="timbral"` if you wish. This algorithm was causing some problems for us (never finishing on longer input) so we have added a feature whereby you can window your input into smaller chunks that the algorithm has an easier time with. The window length in seconds is set with `--tc_window`.
 
 ## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+If you have any issues, or just want to tell me you used this and thought it was cool, hit me up at mwood@dhdev.ca.
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+## Authors
+The Perceptual Visualizer was created by Kian Dunn, Owen Ohlson, and Mckinley Wood.
 
-## License
-For open source projects, say how it is licensed.
+## Acnowledgement
+Thank you to all of the people behind the tools and libraries that made this project possible, including Demucs, LarsNet, nussl, and all of the stuff that made those projects possible, too! Also thank you to George Tzanetakis for the awesome course that gave us the knowledge and the opportunity to do this.
 
 ## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+This project was completed for a course in music information retrieval at the University of Victoria. We have now finished the course, so it is likely that no more work will be done on this project.
