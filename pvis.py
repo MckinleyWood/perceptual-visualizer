@@ -29,7 +29,7 @@ import feature_extraction as fe
 import other_separation as sep
 
 
-MAX_OTHER_SOURCES = 3
+MAX_OTHER_SOURCES = 5
 
 
 @dataclass
