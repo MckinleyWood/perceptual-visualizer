@@ -1,7 +1,6 @@
 # Perceptual Visualizer
 
 ## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
 The goal of the Perceptual Visualizer is to produce a visualization of a stereo mix where distinct sources are represented based on their percieved spatial location. We achieve this by first source-separating the input using a combination of deep-learning libraries (Demucs and LarsNet) and unsupervised, primitive separation algorithms provided by the nussl library, and then running another script that extimates the spatial positions of the separated sources, and finally a TouchDesigner program that produces an artful visualization.
 
 ## Visuals
