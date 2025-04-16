@@ -3,9 +3,6 @@
 ## Description
 The goal of the Perceptual Visualizer is to produce a visualization of a stereo mix where distinct sources are represented based on their percieved spatial location. We achieve this by first source-separating the input using a combination of deep-learning libraries (Demucs and LarsNet) and unsupervised, primitive separation algorithms provided by the nussl library, and then running another script that extimates the spatial positions of the separated sources, and finally a TouchDesigner program that produces an artful visualization.
 
-## Visuals
-Coming soon...
-
 ## Installation and Usage
 This project strings together a number of tools and programs, not all of which were designed to be run in series like this. As a result, after cloning this repository, getting it up and running takes a few more steps. The following is one way to set things up that will probably work, although you may need to do a few more things depending on your system and configuration.
 
@@ -52,7 +49,7 @@ python pvis.py path/to/audio/file.wav
 This should produce a folder called `output` with the same format as `example_output`.
 
 ### Step 4: TouchDesigner
-This project uses [TouchDesigner](https://derivative.ca/showcase) to generate the visuals. The free version (which is more than fine for this application) can be downloaded [here](https://derivative.ca/download). After installing TouchDesigner, all you need to do is open the `visual_generator.toe` file, click on the `masta` node, and then type the (exact!) name of the file you have just run `pvis.py` on, minus the extension. You can then press `f1` to fullscreen the output. More experienced TouchDesigner users can go in and change things like the colours of the shapes or make it output a video file, but we currently have not implemeted a super easy way to do that.
+This project uses [TouchDesigner](https://derivative.ca/showcase) to generate the visuals. The free version (which is more than fine for this application) can be downloaded [here](https://derivative.ca/download). After installing TouchDesigner, all you need to do is open the `visual_generator.toe` file, zoom out until you see a node called `masta`, select it, press `p` to bring up the paramter menu, and then type the (exact!) name of the file you have just run `pvis.py` on, minus the extension. You can then press `f1` to fullscreen the output. More experienced TouchDesigner users can go in and change things like the colours of the shapes or make it output a video file, but we currently have not implemeted a super easy way to do that.
 
 ### Step 5: Command-line Arguments
 Additional command-line arguments may be provided to the program to change certain behaviours. Below are a few examples:

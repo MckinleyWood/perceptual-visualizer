@@ -246,9 +246,11 @@ def x_pos(y: np.ndarray, D: np.ndarray, sr: int) -> np.ndarray:
     """
     Calculates the x position of the visualization of a sound source.
 
-    This function uses the ILD and ITD of the signal, weighted based on
-    an experimentally determined model. It may produce extraneous values
-    when ILD and ITD cues are contradictory.
+    This function originally used the ILD and ITD of the signal, 
+    weighted based on an experimentally determined model, but it was not
+    rubust to bleed and artifacts from source separation.
+
+    This implementation uses the only ILD of the signal.
 
     Parameters
     ----------
