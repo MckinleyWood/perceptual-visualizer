@@ -113,7 +113,7 @@ def timbral_clustering(y, num_sources, n_components, window_size=None,
 
     return tracks
 
-def spatial_clustering(y, num_sources, clustering_type='KMeans'):
+def spatial_clustering(y, num_sources, clustering_type='KMeans', mask_type='soft'):
     """
     Perform spatial clustering on the input audio signal.
     
@@ -131,6 +131,6 @@ def spatial_clustering(y, num_sources, clustering_type='KMeans'):
     """
     # Separate
     separator = nussl.separation.spatial.SpatialClustering(
-        y, num_sources, clustering_type=clustering_type)
+        y, num_sources, clustering_type=clustering_type, mask_type=mask_type)
     other_split = separator() 
     return other_split
