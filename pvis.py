@@ -210,9 +210,11 @@ def main():
     parser.add_argument("--fps", type=int, default=30)
     parser.add_argument("--frame_length", type=int, default=4096)
     parser.add_argument("--hop_length", type=int, default=2048)
+    parser.add_argument("--demucs_model", type=str, default="htdemucs")
     parser.add_argument("--clustering", type=str, default="spatial")
     parser.add_argument("--tc_window", type=str, default="None")
     parser.add_argument("--num_sources", type=int, default=2)
+    parser.add_argument("--mask_type", type=str, default="soft")
     args = parser.parse_args()
 
     # Create the output directories if they don't exist.
@@ -224,7 +226,7 @@ def main():
     # Separate vocals, drums, bass, and other stems using Demucs
     # You can comment this out if you have already run Demucs.
     print(f"\nRunning demucs on {args.input_path}...\n")
-    demucs.separate.main([args.input_path])
+    demucs.separate.main([args.input_path, "-n", args.demucs_model])
     move_demucs_files(base)
 
     # Separate the drums further using larsnet
@@ -251,14 +253,16 @@ def main():
 
     if args.clustering == "spatial":
         other_split = sep.spatial_clustering(other, args.num_sources, 
-                        clustering_type="GaussianMixture")
+                        clustering_type="GaussianMixture", 
+                        mask_type=args.mask_type)
     elif args.clustering == "timbral":
         if args.tc_window == "None":
             window_size = None
         else:
             window_size = int(args.tc_window)
         other_split = sep.timbral_clustering(other, args.num_sources, 
-                        args.num_sources * 2, window_size=window_size)
+                        args.num_sources * 2, window_size=window_size, 
+                        mask_type=args.mask_type)
     else:
         raise ValueError(f"Invalid clustering method: {args.clustering}")
     
