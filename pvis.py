@@ -19,6 +19,7 @@ import scipy.signal.windows as sw
 import scipy.signal
 
 np.float_ = np.float64
+np.bool = bool
 scipy.signal.hamming = sw.hamming
 scipy.signal.hann = sw.hann
 scipy.signal.blackman = sw.blackman
@@ -131,7 +132,7 @@ def create_output_dirs(base: str) -> None:
         os.makedirs(os.path.join("output", base, "larsnet", "input"))
 
 
-def move_demucs_files(base: str) -> None:
+def move_demucs_files(base: str, demucs_model: str) -> None:
     """
     Move the Demucs files to the appropriate directory.
 
@@ -148,16 +149,16 @@ def move_demucs_files(base: str) -> None:
         The name of the input file without the extension.
     """
     shutil.move(
-        os.path.join("separated", "htdemucs", base, "vocals.wav"),
+        os.path.join("separated", demucs_model, base, "vocals.wav"),
         os.path.join("output", base, "demucs", "vocals.wav"))
     shutil.move(
-        os.path.join("separated", "htdemucs", base, "drums.wav"),
+        os.path.join("separated", demucs_model, base, "drums.wav"),
         os.path.join("output", base, "demucs", "drums.wav"))
     shutil.move(
-        os.path.join("separated", "htdemucs", base, "bass.wav"),
+        os.path.join("separated", demucs_model, base, "bass.wav"),
         os.path.join("output", base, "demucs", "bass.wav"))
     shutil.move(
-        os.path.join("separated", "htdemucs", base, "other.wav"),
+        os.path.join("separated", demucs_model, base, "other.wav"),
         os.path.join("output", base, "demucs", "other.wav"))
     
     shutil.rmtree("separated")
@@ -227,7 +228,7 @@ def main():
     # You can comment this out if you have already run Demucs.
     print(f"\nRunning demucs on {args.input_path}...\n")
     demucs.separate.main([args.input_path, "-n", args.demucs_model])
-    move_demucs_files(base)
+    move_demucs_files(base, args.demucs_model)
 
     # Separate the drums further using larsnet
     print("\nRunning larsnet drum separation...\n")
